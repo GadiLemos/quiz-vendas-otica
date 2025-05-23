@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Vendas em Ótica</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .progress-bar { transition: width 0.3s ease; }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .btn-primary:hover { background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%); }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="app" class="max-w-4xl mx-auto p-6 min-h-screen"></div>
+
+    <script>
+        // Estado da aplicação
+        let state = {
+            currentLevel: 'iniciante',
+            currentModule: 0,
+            currentQuestion: 0,
+            selectedAnswer: '',
+            showResult: false,
+            score: { correct: 0, total: 0 }
+        };
+
+        // Banco de questões
+        const questionsBank = {
+            iniciante: {
+                "Fundamentos da Ótica": [
+                    {
+                        question: "O que são lentes monofocais?",
+                        options: [
+                            "Lentes que corrigem apenas um problema visual",
+                            "Lentes que servem para longe e perto",
+                            "Lentes com proteção solar",
+                            "Lentes que mudam de cor"
+                        ],
+                        correct: 0,
+                        explanation: "Lentes monofocais corrigem apenas um tipo de problema visual: ou miopia, ou hipermetropia, ou astigmatismo."
+                    },
+                    {
+                        question: "Qual a principal diferença entre miopia e hipermetropia?",
+                        options: [
+                            "Miopia: vê bem de perto / Hipermetropia: vê bem de longe",
+                            "Miopia: vê bem de longe / Hipermetropia: vê bem de perto",
+                            "Não há diferença significativa",
+                            "Ambas afetam igualmente longe e perto"
+                        ],
+                        correct: 0,
+                        explanation: "Míopes enxergam bem de perto mas têm dificuldade para longe. Hipermétropes têm mais facilidade para longe, mas podem ter dificuldade de perto."
+                    },
+                    {
+                        question: "Qual material de armação é mais leve?",
+                        options: ["Acetato", "Metal comum", "Titânio", "Todos têm o mesmo peso"],
+                        correct: 2,
+                        explanation: "O titânio é o material mais leve e resistente, ideal para quem busca conforto e durabilidade."
+                    },
+                    {
+                        question: "O que é astigmatismo?",
+                        options: [
+                            "Problema que afeta apenas pessoas idosas",
+                            "Distorção da visão causada pela curvatura irregular da córnea",
+                            "Doença contagiosa dos olhos",
+                            "Problema que só afeta a visão de longe"
+                        ],
+                        correct: 1,
+                        explanation: "Astigmatismo é causado pela curvatura irregular da córnea ou cristalino, causando visão distorcida ou borrada."
+                    }
+                ],
+                "Atendimento ao Cliente": [
+                    {
+                        question: "Qual a primeira coisa que você deve fazer ao receber um cliente?",
+                        options: [
+                            "Perguntar qual o grau dele",
+                            "Mostrar os óculos mais caros",
+                            "Cumprimentar e perguntar como pode ajudar",
+                            "Explicar todas as promoções"
+                        ],
+                        correct: 2,
+                        explanation: "A recepção calorosa e investigar a necessidade do cliente é fundamental para um bom atendimento."
+                    },
+                    {
+                        question: "Um cliente diz que não quer gastar muito. O que fazer?",
+                        options: [
+                            "Mostrar apenas os óculos mais baratos",
+                            "Tentar convencê-lo a comprar os mais caros",
+                            "Perguntar qual valor ele tem em mente e mostrar opções",
+                            "Dizer que óculos bons são caros"
+                        ],
+                        correct: 2,
+                        explanation: "É importante respeitar o orçamento e trabalhar com opções dentro da faixa de preço do cliente."
+                    },
+                    {
+                        question: "Como explicar a importância do antirreflexo?",
+                        options: [
+                            "É apenas estético",
+                            "Reduz reflexos e melhora a visão, especialmente à noite",
+                            "Só serve para quem trabalha no computador",
+                            "É obrigatório por lei"
+                        ],
+                        correct: 1,
+                        explanation: "O antirreflexo melhora a qualidade visual, reduzindo reflexos incômodos e cansaço visual."
+                    }
+                ]
+            },
+            intermediario: {
+                "Técnicas de Vendas": [
+                    {
+                        question: "Cliente questiona: 'Por que esse óculos custa tanto?'. Como responder?",
+                        options: [
+                            "Explicar apenas que é uma marca famosa",
+                            "Mostrar os benefícios: qualidade da lente, durabilidade, conforto",
+                            "Dizer que todos os óculos são caros",
+                            "Oferecer desconto imediatamente"
+                        ],
+                        correct: 1,
+                        explanation: "Sempre transforme características em benefícios práticos para o cliente."
+                    },
+                    {
+                        question: "Qual a melhor estratégia para venda consultiva?",
+                        options: [
+                            "Vender o produto mais caro disponível",
+                            "Descobrir o estilo de vida e necessidades específicas",
+                            "Mostrar todos os produtos da loja",
+                            "Focar apenas no preço"
+                        ],
+                        correct: 1,
+                        explanation: "A venda consultiva se baseia em entender as necessidades do cliente para oferecer a solução ideal."
+                    },
+                    {
+                        question: "Como oferecer um segundo par de óculos?",
+                        options: [
+                            "Insistir que todo mundo precisa de dois",
+                            "Explicar situações específicas: trabalho/lazer, sol/leitura",
+                            "Oferecer desconto grande no segundo",
+                            "Não oferecer, esperar o cliente perguntar"
+                        ],
+                        correct: 1,
+                        explanation: "Identifique situações diferentes na vida do cliente que justifiquem um segundo par."
+                    }
+                ],
+                "Conhecimento Técnico": [
+                    {
+                        question: "Uma receita mostra: OD -2,50 -0,75 x 180°. O que isso significa?",
+                        options: [
+                            "Miopia leve sem astigmatismo",
+                            "Hipermetropia com astigmatismo",
+                            "Miopia com astigmatismo no eixo 180°",
+                            "Prescrição inválida"
+                        ],
+                        correct: 2,
+                        explanation: "OD (olho direito) tem -2,50 de miopia e -0,75 de astigmatismo no eixo 180°."
+                    },
+                    {
+                        question: "Cliente não consegue se adaptar às progressivas. O que fazer?",
+                        options: [
+                            "Dizer que é normal e vai passar",
+                            "Investigar: como está usando, há quanto tempo, que dificuldades",
+                            "Trocar por bifocal imediatamente",
+                            "Dizer que progressiva não serve para ele"
+                        ],
+                        correct: 1,
+                        explanation: "É crucial investigar o tipo de dificuldade para orientar corretamente."
+                    }
+                ]
+            },
+            avancado: {
+                "Casos Complexos": [
+                    {
+                        question: "Cliente com alta miopia (-8,00) quer armação grande. Como proceder?",
+                        options: [
+                            "Atender o pedido sem questionar",
+                            "Explicar que lentes grossas ficarão antiestéticas e sugerir alternativas",
+                            "Recusar a venda",
+                            "Vender apenas lentes mais baratas"
+                        ],
+                        correct: 1,
+                        explanation: "É importante educar sobre as consequências e oferecer soluções como lentes mais finas."
+                    },
+                    {
+                        question: "Como abordar cliente que comprou online e teve problemas?",
+                        options: [
+                            "Criticar a compra online",
+                            "Demonstrar empatia e mostrar diferenciais do atendimento presencial",
+                            "Cobrar mais caro por ser presencial",
+                            "Recusar atendimento"
+                        ],
+                        correct: 1,
+                        explanation: "Use a experiência negativa para demonstrar o valor do atendimento especializado."
+                    }
+                ]
+            }
+        };
+
+        const levels = ['iniciante', 'intermediario', 'avancado'];
+        const levelNames = {
+            'iniciante': 'Iniciante',
+            'intermediario': 'Intermediário',
+            'avancado': 'Avançado'
+        };
+
+        // Funções auxiliares
+        function getCurrentQuestions() {
+            const modules = Object.keys(questionsBank[state.currentLevel]);
+            const moduleName = modules[state.currentModule];
+            return questionsBank[state.currentLevel][moduleName] || [];
+        }
+
+        function getCurrentModuleName() {
+            const modules = Object.keys(questionsBank[state.currentLevel]);
+            return modules[state.currentModule];
+        }
+
+        function changeLevel(level) {
+            state.currentLevel = level;
+            state.currentModule = 0;
+            state.currentQuestion = 0;
+            state.selectedAnswer = '';
+            state.showResult = false;
+            state.score = { correct: 0, total: 0 };
+            render();
+        }
+
+        function selectAnswer(answerIndex) {
+            if (!state.showResult) {
+                state.selectedAnswer = answerIndex;
+                render();
+            }
+        }
+
+        function submitAnswer() {
+            const questions = getCurrentQuestions();
+            const isCorrect = state.selectedAnswer === questions[state.currentQuestion].correct;
+            
+            state.score.correct += isCorrect ? 1 : 0;
+            state.score.total += 1;
+            state.showResult = true;
+            render();
+        }
+
+        function nextQuestion() {
+            const questions = getCurrentQuestions();
+            
+            if (state.currentQuestion < questions.length - 1) {
+                state.currentQuestion += 1;
+            } else {
+                const modules = Object.keys(questionsBank[state.currentLevel]);
+                if (state.currentModule < modules.length - 1) {
+                    state.currentModule += 1;
+                    state.currentQuestion = 0;
+                } else {
+                    if (state.currentLevel !== 'avancado') {
+                        const nextLevelIndex = levels.indexOf(state.currentLevel) + 1;
+                        if (state.score.correct / state.score.total >= 0.7) {
+                            alert(`Parabéns! Você pode avançar para o nível ${levelNames[levels[nextLevelIndex]]}`);
+                        }
+                    }
+                }
+            }
+            
+            state.selectedAnswer = '';
+            state.showResult = false;
+            render();
+        }
+
+        function resetQuiz() {
+            state.currentQuestion = 0;
+            state.currentModule = 0;
+            state.selectedAnswer = '';
+            state.showResult = false;
+            state.score = { correct: 0, total: 0 };
+            render();
+        }
+
+        // Função de renderização
+        function render() {
+            const questions = getCurrentQuestions();
+            const currentQ = questions[state.currentQuestion];
+            
+            if (!currentQ) {
+                document.getElementById('app').innerHTML = `
+                    <div class="bg-white rounded-lg shadow-lg p-8 text-center fade-in">
+                        <div class="text-6xl mb-4">🏆</div>
+                        <h2 class="text-2xl font-bold mb-4">Nível Concluído!</h2>
+                        <p class="text-gray-600 mb-6">
+                            Você completou todas as questões deste nível.<br>
+                            Pontuação: ${state.score.correct}/${state.score.total} (${Math.round((state.score.correct/state.score.total)*100)}%)
+                        </p>
+                        <button onclick="resetQuiz()" class="btn-primary text-white px-6 py-3 rounded-lg hover:opacity-90 transition-all">
+                            Recomeçar Nível
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            const progress = ((state.currentQuestion + 1) / questions.length) * 100;
+
+            document.getElementById('app').innerHTML = `
+                <div class="fade-in">
+                    <!-- Header -->
+                    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
+                                <span class="text-white font-bold">Q</span>
+                            </div>
+                            <h1 class="text-3xl font-bold text-gray-800">Quiz Vendas em Ótica</h1>
+                        </div>
+                        
+                        <!-- Level Selector -->
+                        <div class="flex gap-2 mb-4">
+                            ${levels.map(level => `
+                                <button
+                                    onclick="changeLevel('${level}')"
+                                    class="px-4 py-2 rounded-lg font-medium transition-colors ${
+                                        state.currentLevel === level 
+                                            ? 'bg-purple-600 text-white' 
+                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                    }"
+                                >
+                                    ${levelNames[level]}
+                                </button>
+                            `).join('')}
+                        </div>
+
+                        <!-- Progress -->
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-medium text-gray-700">
+                                ${getCurrentModuleName()} - Questão ${state.currentQuestion + 1} de ${questions.length}
+                            </span>
+                            <span class="text-sm font-medium text-gray-700">
+                                Acertos: ${state.score.correct}/${state.score.total}
+                            </span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3">
+                            <div class="bg-purple-600 h-3 rounded-full progress-bar" style="width: ${progress}%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Question Card -->
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <h2 class="text-xl font-bold text-gray-800 mb-6">
+                            ${currentQ.question}
+                        </h2>
+
+                        <div class="space-y-3 mb-6">
+                            ${currentQ.options.map((option, index) => `
+                                <button
+                                    onclick="selectAnswer(${index})"
+                                    ${state.showResult ? 'disabled' : ''}
+                                    class="w-full p-4 text-left rounded-lg border-2 transition-all duration-200 ${
+                                        state.showResult
+                                            ? index === currentQ.correct
+                                                ? 'border-green-500 bg-green-50 text-green-800'
+                                                : index === state.selectedAnswer && state.selectedAnswer !== currentQ.correct
+                                                ? 'border-red-500 bg-red-50 text-red-800'
+                                                : 'border-gray-200 bg-gray-50 text-gray-600'
+                                            : state.selectedAnswer === index
+                                            ? 'border-blue-500 bg-blue-50 text-blue-800'
+                                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                                    }"
+                                >
+                                    <div class="flex items-center gap-3">
+                                        ${state.showResult ? (
+                                            index === currentQ.correct ? '✅' : 
+                                            index === state.selectedAnswer && state.selectedAnswer !== currentQ.correct ? '❌' : ''
+                                        ) : ''}
+                                        <span class="font-medium">${String.fromCharCode(65 + index)})</span>
+                                        <span>${option}</span>
+                                    </div>
+                                </button>
+                            `).join('')}
+                        </div>
+
+                        ${state.showResult ? `
+                            <div class="p-4 rounded-lg mb-6 ${
+                                state.selectedAnswer === currentQ.correct ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+                            }">
+                                <h3 class="font-bold mb-2 ${
+                                    state.selectedAnswer === currentQ.correct ? 'text-green-800' : 'text-red-800'
+                                }">
+                                    ${state.selectedAnswer === currentQ.correct ? '✅ Correto!' : '❌ Incorreto!'}
+                                </h3>
+                                <p class="text-gray-700">${currentQ.explanation}</p>
+                            </div>
+                        ` : ''}
+
+                        <div class="flex gap-3">
+                            ${!state.showResult ? `
+                                <button
+                                    onclick="submitAnswer()"
+                                    ${state.selectedAnswer === '' ? 'disabled' : ''}
+                                    class="btn-primary text-white px-6 py-3 rounded-lg hover:opacity-90 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all"
+                                >
+                                    🎯 Responder
+                                </button>
+                            ` : `
+                                <button
+                                    onclick="nextQuestion()"
+                                    class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
+                                >
+                                    Próxima ➡️
+                                </button>
+                            `}
+                            
+                            <button
+                                onclick="resetQuiz()"
+                                class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors"
+                            >
+                                🔄 Reiniciar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tips -->
+                    <div class="bg-blue-50 rounded-lg p-4 mt-6">
+                        <div class="flex items-start gap-3">
+                            <span class="text-2xl">💡</span>
+                            <div>
+                                <h3 class="font-semibold text-blue-800 mb-1">Dica de Estudo</h3>
+                                <p class="text-blue-700 text-sm">
+                                    ${state.currentLevel === 'iniciante' && 'Focus nos fundamentos! Conhecer bem os produtos é a base para vender bem.'}
+                                    ${state.currentLevel === 'intermediario' && 'Agora é hora de aprimorar suas técnicas de vendas e relacionamento com o cliente.'}
+                                    ${state.currentLevel === 'avancado' && 'Trabalhe situações complexas e desenvolva expertise para casos especiais.'}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Inicializar aplicação
+        render();
+    </script>
+</body>
+</html>
